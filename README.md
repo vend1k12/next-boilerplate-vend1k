@@ -103,7 +103,7 @@ pre-commit install -t commit-msg
 | Command               | Description                          |
 | --------------------- | ------------------------------------ |
 | `bun dev`             | Start development server             |
-| `bun build`           | Build the application for production |
+| `bun run build`       | Build the application for production |
 | `bun start`           | Start the production server          |
 | `bun lint`            | Run ESLint                           |
 | `bun prettier:fix`    | Fix formatting issues                |
