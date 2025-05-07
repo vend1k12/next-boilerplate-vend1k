@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 
 import { AuthCard, AuthCardFooter } from "~/components/features/auth/ui/auth-card"
 import { AuthMessage } from "~/components/features/auth/ui/auth-message"
+import { Captcha } from "~/components/features/auth/ui/captcha"
 import { SocialAuth } from "~/components/features/auth/ui/social-auth"
 import { Button } from "~/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form"
@@ -14,7 +15,7 @@ import { useRegister } from "~/hooks/use-auth"
 import { registerFormSchema, type RegisterFormValues } from "~/types/auth"
 
 export function RegisterForm() {
-  const { register, isLoading, error, success } = useRegister()
+  const { register, isLoading, error, success, setCaptchaToken } = useRegister()
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -93,8 +94,11 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
+
+          <Captcha onVerify={setCaptchaToken} />
+
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Выполняется регистрация..." : "Зарегистрироваться"}
+            {isLoading ? "Регистрация..." : "Зарегистрироваться"}
           </Button>
         </form>
       </Form>

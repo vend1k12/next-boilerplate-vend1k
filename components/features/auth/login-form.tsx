@@ -2,10 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
+import { useQueryState } from "nuqs"
 import { useForm } from "react-hook-form"
 
 import { AuthCard, AuthCardFooter } from "~/components/features/auth/ui/auth-card"
 import { AuthMessage } from "~/components/features/auth/ui/auth-message"
+import { Captcha } from "~/components/features/auth/ui/captcha"
+import { PasskeyLogin } from "~/components/features/auth/ui/passkey-login"
 import { SocialAuth } from "~/components/features/auth/ui/social-auth"
 import { Button } from "~/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form"
@@ -15,7 +18,8 @@ import { useLogin } from "~/hooks/use-auth"
 import { loginFormSchema, type LoginFormValues } from "~/types/auth"
 
 export function LoginForm() {
-  const { login, isLoading, error } = useLogin()
+  const { login, isLoading, error, setCaptchaToken } = useLogin()
+  const [redirectUrl] = useQueryState("redirectUrl", { defaultValue: "/dashboard" })
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -25,8 +29,8 @@ export function LoginForm() {
     },
   })
 
-  const onSubmit = async (values: LoginFormValues) => {
-    await login(values)
+  const onSubmit = (values: LoginFormValues) => {
+    login(values, redirectUrl)
   }
 
   return (
@@ -46,7 +50,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="example@example.com" {...field} />
+                  <Input placeholder="example@example.com" {...field} autoComplete="username webauthn" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -59,7 +63,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Пароль</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} autoComplete="current-password webauthn" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -70,11 +74,16 @@ export function LoginForm() {
               Забыли пароль?
             </Link>
           </div>
+
+          <Captcha onVerify={setCaptchaToken} />
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Выполняется вход..." : "Войти"}
           </Button>
         </form>
       </Form>
+
+      <PasskeyLogin redirectUrl={redirectUrl} />
 
       <SocialAuth />
     </AuthCard>

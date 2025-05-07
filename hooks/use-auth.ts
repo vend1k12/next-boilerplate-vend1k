@@ -1,9 +1,10 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { authClient } from "~/lib/auth-client"
+import { fetchRemoteIp } from "~/lib/fetch-ip"
 import type {
   AuthState,
   ForgotPasswordFormValues,
@@ -56,22 +57,57 @@ export const useAuthState = (initialState?: Partial<AuthState>): AuthState => {
 export const useLogin = () => {
   const router = useRouter()
   const state = useAuthState()
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const remoteIp = useRef<string | null>(null)
 
-  const login = async (values: LoginFormValues) => {
+  useEffect(() => {
+    fetchRemoteIp(remoteIp)
+  }, [])
+
+  const login = async (values: LoginFormValues, callbackUrl: string = "/dashboard") => {
     state.setLoading!(true)
     state.setError!(null)
+
+    if (!captchaToken) {
+      state.setError!("Пожалуйста, пройдите проверку капчей")
+      state.setLoading!(false)
+      return
+    }
 
     try {
       await authClient.signIn.email(
         {
           email: values.email,
           password: values.password,
-          callbackURL: "/dashboard",
+          callbackURL: callbackUrl,
         },
         {
-          onSuccess: () => {
+          headers: {
+            "x-captcha-response": captchaToken,
+            "x-captcha-user-remote-ip": remoteIp.current || "",
+            "x-real-ip": remoteIp.current || "",
+          },
+          onSuccess: async () => {
             toast.success("Вход выполнен успешно!")
-            router.push("/dashboard")
+
+            // Проверяем, есть ли у пользователя passkey
+            try {
+              const passkeysResult = await authClient.passkey.listUserPasskeys()
+              const hasPasskeys =
+                passkeysResult?.data && Array.isArray(passkeysResult.data) && passkeysResult.data.length > 0
+
+              // Если у пользователя нет passkey, перенаправляем на страницу предложения создать passkey
+              // Иначе перенаправляем на указанный callbackUrl
+              if (!hasPasskeys) {
+                router.push("/auth/passkey-offer")
+              } else {
+                router.push(callbackUrl)
+              }
+            } catch (error) {
+              console.error("Ошибка при проверке passkey:", error)
+              // При ошибке проверки passkey продолжаем стандартный редирект
+              router.push(callbackUrl)
+            }
           },
           onError: (ctx) => {
             state.setError!(ctx.error.message)
@@ -88,6 +124,8 @@ export const useLogin = () => {
   return {
     ...state,
     login,
+    setCaptchaToken,
+    captchaToken,
   }
 }
 
@@ -95,11 +133,23 @@ export const useLogin = () => {
 export const useRegister = () => {
   const router = useRouter()
   const state = useAuthState()
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const remoteIp = useRef<string | null>(null)
+
+  useEffect(() => {
+    fetchRemoteIp(remoteIp)
+  }, [])
 
   const register = async (values: RegisterFormValues) => {
     state.setLoading!(true)
     state.setError!(null)
     state.setSuccess!(null)
+
+    if (!captchaToken) {
+      state.setError!("Пожалуйста, пройдите проверку капчей")
+      state.setLoading!(false)
+      return
+    }
 
     try {
       const { data, error } = await authClient.signUp.email(
@@ -110,8 +160,14 @@ export const useRegister = () => {
           callbackURL: "/dashboard",
         },
         {
+          headers: {
+            "x-captcha-response": captchaToken,
+            "x-captcha-user-remote-ip": remoteIp.current || "",
+            "x-real-ip": remoteIp.current || "",
+          },
           onSuccess: () => {
             state.setSuccess!("Аккаунт успешно создан! Проверьте вашу почту для подтверждения email.")
+            router.push("/auth/passkey-offer")
           },
           onError: (ctx) => {
             state.setError!(ctx.error.message)
@@ -132,6 +188,8 @@ export const useRegister = () => {
   return {
     ...state,
     register,
+    setCaptchaToken,
+    captchaToken,
   }
 }
 
