@@ -32,12 +32,20 @@ jobs:
       - name: "Install bun & dependencies"
         uses: oven-sh/setup-bun@v1
         with:
-          run_install: |
-            - recursive: true
-            - args: [--frozen-lockfile]
+          bun-version: latest
 
-      # - name: Install dependencies
-      #   run: bun install --frozen-lockfile
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Create build env file
+        run: |
+          cat > .env.build << EOL
+          ANALYZE=${{ env.ANALYZE || 'false' }}
+          BETTER_AUTH_SECRET="ci-dummy-secret-key-for-build-only"
+          BETTER_AUTH_URL="http://localhost:5151"
+          NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:5151"
+          EOL
+          cp .env.build .env
 
       - name: Restore next build
         uses: actions/cache@v3

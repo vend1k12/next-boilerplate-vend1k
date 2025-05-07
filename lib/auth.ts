@@ -1,3 +1,4 @@
+import { PrismaClient } from "@prisma/client"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { captcha, openAPI } from "better-auth/plugins"
@@ -6,7 +7,6 @@ import { passkey } from "better-auth/plugins/passkey"
 import { username } from "better-auth/plugins/username"
 
 import { env } from "~/env.mjs"
-import { PrismaClient } from "~/generated/prisma"
 
 const prisma = new PrismaClient()
 

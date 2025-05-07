@@ -36,7 +36,8 @@
     "jest.config.js",
     ".next/types/**/*.ts",
     "eslint.config.mjs",
-    "env.mjs"
+    "env.mjs",
+    "constants/features.tsч"
   ],
   "exclude": ["node_modules"]
 }

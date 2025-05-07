@@ -40,3 +40,5 @@ storybook-static/
 generated/prisma/
 
 .cursor/
+
+tsconfig.tsbuildinfo

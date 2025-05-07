@@ -1,10 +1,15 @@
+import { FlatCompat } from "@eslint/eslintrc"
 import * as fs from "fs"
+import path from "path"
+import { fileURLToPath } from "url"
 
-// https://github.com/francoismassart/eslint-plugin-tailwindcss/pull/381
-// import eslintPluginTailwindcss from "eslint-plugin-tailwindcss"
-import eslintPluginNext from "@next/eslint-plugin-next"
-import eslintPluginImport from "eslint-plugin-import"
-import typescriptEslint from "typescript-eslint"
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: { plugins: ["@typescript-eslint"] },
+})
 
 const eslintIgnore = [
   ".git/",
@@ -16,29 +21,38 @@ const eslintIgnore = [
   "*.min.js",
   "*.config.js",
   "*.d.ts",
+  "generated/prisma/",
+  "public/openapi.json",
+  "*.yaml",
 ]
 
-const config = typescriptEslint.config(
+function getDirectoriesToSort() {
+  const ignoredSortingDirectories = [".git", ".next", ".vscode", "node_modules"]
+  return fs
+    .readdirSync(process.cwd())
+    .filter((file) => fs.statSync(process.cwd() + "/" + file).isDirectory())
+    .filter((f) => !ignoredSortingDirectories.includes(f))
+}
+
+export default [
   {
     ignores: eslintIgnore,
   },
-  typescriptEslint.configs.recommended,
-  eslintPluginImport.flatConfigs.recommended,
-  {
-    plugins: {
-      "@next/next": eslintPluginNext,
-    },
-    rules: {
-      ...eslintPluginNext.configs.recommended.rules,
-      ...eslintPluginNext.configs["core-web-vitals"].rules,
-    },
-  },
-  {
+  ...compat.config({
+    extends: [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:import/recommended",
+      "plugin:import/typescript",
+      "next",
+      "next/core-web-vitals",
+    ],
+    parser: "@typescript-eslint/parser",
+    plugins: ["@typescript-eslint", "import"],
     settings: {
       tailwindcss: {
         callees: ["classnames", "clsx", "ctl", "cn", "cva"],
       },
-
       "import/resolver": {
         typescript: true,
         node: true,
@@ -90,15 +104,5 @@ const config = typescriptEslint.config(
         },
       ],
     },
-  }
-)
-
-function getDirectoriesToSort() {
-  const ignoredSortingDirectories = [".git", ".next", ".vscode", "node_modules"]
-  return fs
-    .readdirSync(process.cwd())
-    .filter((file) => fs.statSync(process.cwd() + "/" + file).isDirectory())
-    .filter((f) => !ignoredSortingDirectories.includes(f))
-}
-
-export default config
+  }),
+]

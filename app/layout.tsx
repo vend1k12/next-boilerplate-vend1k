@@ -1,13 +1,11 @@
 import "styles/tailwind.css"
-import { ThemeProvider } from "~/components/providers/theme-provider"
+import { Providers } from "~/components/providers"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
